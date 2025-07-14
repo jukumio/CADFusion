@@ -1,3 +1,17 @@
+#!/bin/bash
+
+# 토큰 파일 확인 및 설정
+TOKEN_FILE="$HOME/.cache/huggingface/token"
+if [ -f "$TOKEN_FILE" ]; then
+    export HF_TOKEN=$(cat "$TOKEN_FILE")
+    export HUGGINGFACE_HUB_TOKEN="$HF_TOKEN"
+    echo "HuggingFace token loaded successfully"
+else
+    echo "Warning: HuggingFace token file not found at $TOKEN_FILE"
+    echo "Please run: huggingface-cli login"
+    exit 1
+fi
+
 # set it to your data path
 data_path=data/sl_data
 # set it to your experiment path

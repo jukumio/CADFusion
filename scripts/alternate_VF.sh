@@ -14,7 +14,7 @@ eval_data=$data_path/val.json
 #         VF run 1: CAD-1 (automatically)
 #         VF run 2: CAD-2 (automatically)
 #         ...
-base_name=model_name_you_trained_for_SL_with_last_digit_removed
+base_name=juheon
 
 run_name=${base_name}0
 ./scripts/generate_samples.sh $run_name test "--full --device-map auto"
