@@ -1,12 +1,22 @@
 import argparse
 import json
 import random
+import os
 
 from huggingface_hub import login
 from tqdm import tqdm
 from utils import MAX_LENGTH, prepare_model_and_tokenizer
 
-login()
+# auto login to Hugging Face
+token_path = os.path.expanduser('~/.cache/huggingface/token')
+if os.path.exists(token_path):
+    with open(token_path, 'r') as f:
+        token = f.read().strip()
+    login(token=token)
+else:
+    print("Token file not found. Please run: huggingface-cli login")
+    login() 
+    
 
 random.seed(0)
 

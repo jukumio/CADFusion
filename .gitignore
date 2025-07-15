@@ -176,3 +176,6 @@ cython_debug/
 # Datasets
 cad_data.zip
 cad_data/
+
+# model checkpoints
+exp/model_ckpt/

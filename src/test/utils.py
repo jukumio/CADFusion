@@ -19,7 +19,7 @@ def smart_tokenizer_and_embedding_resize(
     Note: This is the unoptimized version that may make your embedding size not be divisible by 64.
     """
     num_new_tokens = llama_tokenizer.add_special_tokens(special_tokens_dict)
-    model.resize_token_embeddings(len(llama_tokenizer))
+    model.resize_token_embeddings(len(llama_tokenizer), mean_resizing=False)
 
     if num_new_tokens > 0:
         input_embeddings = model.get_input_embeddings().weight.data
@@ -36,16 +36,23 @@ def smart_tokenizer_and_embedding_resize(
         output_embeddings[-num_new_tokens:] = output_embeddings_avg
 
 def prepare_model_and_tokenizer(args):
-    model_id = "meta-llama/Meta-Llama-3-8B"
-    print(f"Model size: {model_id}")
+    base_model_id = "meta-llama/Meta-Llama-3-8B"  # Correct Llama 3 model ID
+    print(f"Loading base model: {base_model_id}")
+    
     if hasattr(args, 'device_map'):
         device_map = args.device_map
     else:
         device_map = 'auto'
-    pipeline = transformers.pipeline("text2text-generation",
-                                        model=model_id, model_kwargs={"torch_dtype": torch.float32}, device_map=device_map)
-    tokenizer = pipeline.tokenizer
-    base_model = pipeline.model
+    
+    # Load base model and tokenizer
+    tokenizer = transformers.AutoTokenizer.from_pretrained(base_model_id, use_auth_token=True)
+    base_model = transformers.AutoModelForCausalLM.from_pretrained(
+        base_model_id, 
+        torch_dtype=torch.float16, 
+        device_map=device_map,
+        low_cpu_mem_usage=True,
+        use_auth_token=True
+    )
 
     special_tokens_dict = dict()
     if tokenizer.pad_token is None:
@@ -63,24 +70,11 @@ def prepare_model_and_tokenizer(args):
         model=base_model,
     )
     
-    peft_config = LoraConfig(
-        r=args.lora_rank,
-        lora_alpha=args.lora_alpha,
-        lora_dropout=args.lora_dropout,
-        bias="none",
-        task_type="CAUSAL_LM",
-    )
-    
     tokenizer.padding_side = 'left'
-    peftmodel = get_peft_model(base_model, peft_config)
+    
+    # Load your LoRA adapter
     if args.pretrained_path:
-        # load a previous checkpoint if the path is given
         model = PeftModel.from_pretrained(base_model, args.pretrained_path, device_map=device_map)
-        peft_state_dict = {f"{k}": v for k, v in model.state_dict().items()}
-        peftmodel.load_state_dict(peft_state_dict)
-        
-        for name, param in peftmodel.named_parameters():
-            if "lora" in name:  # Check if "lora" is in the parameter's name
-                param.requires_grad = True  
-    peftmodel.print_trainable_parameters()
-    return peftmodel, tokenizer
+        return model, tokenizer
+    
+    return base_model, tokenizer

@@ -11,7 +11,7 @@ from peft import LoraConfig, get_peft_model
 from transformers import Trainer, TrainingArguments
 from utils import prepare_model_and_tokenizer
 
-# 토큰 파일에서 자동으로 읽어서 로그인
+# auto login to Hugging Face
 token_path = os.path.expanduser('~/.cache/huggingface/token')
 if os.path.exists(token_path):
     with open(token_path, 'r') as f:
@@ -19,7 +19,7 @@ if os.path.exists(token_path):
     login(token=token)
 else:
     print("Token file not found. Please run: huggingface-cli login")
-    login()  # 대화형 로그인
+    login() 
     
     
 def setup_datasets(args, llama_tokenizer, transform_args={}):
